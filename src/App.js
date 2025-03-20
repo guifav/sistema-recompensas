@@ -7,29 +7,44 @@ function App() {
     'Geografia', 'Português', 'Artes'
   ];
   
-  const notaInicial = {
-    Pedro: disciplinas.reduce((acc, disciplina) => {
-      acc[disciplina] = { 
-        prova1: '', 
-        prova2: '' 
-      };
-      return acc;
-    }, {}),
-    Julio: disciplinas.reduce((acc, disciplina) => {
-      acc[disciplina] = { 
-        prova1: '', 
-        prova2: '' 
-      };
-      return acc;
-    }, {})
+  // Função para criar a estrutura inicial de notas
+  const criarNotasIniciais = () => {
+    return {
+      Pedro: disciplinas.reduce((acc, disciplina) => {
+        acc[disciplina] = { 
+          prova1: '', 
+          prova2: '' 
+        };
+        return acc;
+      }, {}),
+      Julio: disciplinas.reduce((acc, disciplina) => {
+        acc[disciplina] = { 
+          prova1: '', 
+          prova2: '' 
+        };
+        return acc;
+      }, {})
+    };
   };
   
-  const [notas, setNotas] = useState(notaInicial);
+  // Tenta recuperar notas do localStorage ou usa o estado inicial
+  const carregarNotasSalvas = () => {
+    try {
+      const notasSalvas = localStorage.getItem('sistemaRecompensasNotas');
+      return notasSalvas ? JSON.parse(notasSalvas) : criarNotasIniciais();
+    } catch (error) {
+      console.error("Erro ao carregar notas:", error);
+      return criarNotasIniciais();
+    }
+  };
+  
+  const [notas, setNotas] = useState(carregarNotasSalvas);
   const [saldos, setSaldos] = useState({
     Pedro: 0,
     Julio: 0
   });
   const [historicoRecompensas, setHistoricoRecompensas] = useState([]);
+  const [mensagemSalvo, setMensagemSalvo] = useState('');
   
   // Função para atualizar a nota
   const atualizarNota = (filho, disciplina, prova, valor) => {
@@ -44,6 +59,49 @@ function App() {
     const novasNotas = JSON.parse(JSON.stringify(notas)); // Deep copy
     novasNotas[filho][disciplina][prova] = valorNumerico;
     setNotas(novasNotas);
+  };
+  
+  // Função para exportar dados
+  const exportarDados = () => {
+    try {
+      const dadosExportar = {
+        notas: notas,
+        saldos: saldos,
+        dataExportacao: new Date().toLocaleString()
+      };
+      
+      const dadosJSON = JSON.stringify(dadosExportar, null, 2);
+      const blob = new Blob([dadosJSON], {type: 'application/json'});
+      const href = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = href;
+      link.download = 'sistema-recompensas-export.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setMensagemSalvo('Dados exportados com sucesso!');
+      setTimeout(() => setMensagemSalvo(''), 3000);
+    } catch (error) {
+      console.error("Erro ao exportar dados:", error);
+      alert('Erro ao exportar dados. Tente novamente.');
+    }
+  };
+  
+  // Função para limpar todos os dados
+  const limparDados = () => {
+    if (window.confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
+      try {
+        localStorage.removeItem('sistemaRecompensasNotas');
+        setNotas(criarNotasIniciais());
+        setMensagemSalvo('Dados limpos com sucesso!');
+        setTimeout(() => setMensagemSalvo(''), 3000);
+      } catch (error) {
+        console.error("Erro ao limpar dados:", error);
+        alert('Erro ao limpar dados. Tente novamente.');
+      }
+    }
   };
   
   // Calcular recompensa para um par de notas dos irmãos
@@ -108,6 +166,24 @@ function App() {
   };
   
   // Calcular saldo total
+  // Salvar notas no localStorage quando forem atualizadas
+  useEffect(() => {
+    try {
+      localStorage.setItem('sistemaRecompensasNotas', JSON.stringify(notas));
+      if (Object.keys(notas.Pedro).length > 0) {
+        setMensagemSalvo('Dados salvos automaticamente!');
+        // Limpa a mensagem após 3 segundos
+        const timer = setTimeout(() => {
+          setMensagemSalvo('');
+        }, 3000);
+        return () => clearTimeout(timer);
+      }
+    } catch (error) {
+      console.error("Erro ao salvar notas:", error);
+    }
+  }, [notas]);
+
+  // Calcular saldos e histórico quando as notas mudam
   useEffect(() => {
     console.log("Notas atualizadas:", notas); // Debug
     
@@ -170,6 +246,23 @@ function App() {
   return (
     <div className="container">
       <h1 className="titulo">Sistema de Recompensas de Estudos</h1>
+      
+      {/* Mensagem de salvamento */}
+      {mensagemSalvo && (
+        <div className="mensagem-salvo">
+          {mensagemSalvo}
+        </div>
+      )}
+      
+      {/* Botões de ações */}
+      <div className="acoes">
+        <button onClick={exportarDados} className="botao botao-exportar">
+          Exportar Dados
+        </button>
+        <button onClick={limparDados} className="botao botao-limpar">
+          Limpar Dados
+        </button>
+      </div>
       
       {/* Saldo Total */}
       <div className="saldos">
