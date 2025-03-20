@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import './App.css';
 
-const SistemaRecompensas = () => {
+function App() {
   const disciplinas = [
     'Inglês', 'Ciências', 'História', 'Matemática', 
     'Geografia', 'Português', 'Artes'
   ];
-  
-  const semestreAtual = 1;
   
   const notaInicial = {
     Pedro: disciplinas.reduce((acc, disciplina) => {
@@ -42,7 +41,7 @@ const SistemaRecompensas = () => {
       return;
     }
     
-    const novasNotas = {...notas};
+    const novasNotas = JSON.parse(JSON.stringify(notas)); // Deep copy
     novasNotas[filho][disciplina][prova] = valorNumerico;
     setNotas(novasNotas);
   };
@@ -51,8 +50,12 @@ const SistemaRecompensas = () => {
   const calcularRecompensa = (notaPedro, notaJulio) => {
     if (notaPedro === '' || notaJulio === '') return null;
     
-    const notaPedroValida = parseFloat(notaPedro);
-    const notaJulioValida = parseFloat(notaJulio);
+    // Converter para números
+    const notaPedroValida = typeof notaPedro === 'string' ? parseFloat(notaPedro) : notaPedro;
+    const notaJulioValida = typeof notaJulio === 'string' ? parseFloat(notaJulio) : notaJulio;
+    
+    // Validar valores
+    if (isNaN(notaPedroValida) || isNaN(notaJulioValida)) return null;
     
     let recompensaPedro = 0;
     let recompensaJulio = 0;
@@ -106,6 +109,8 @@ const SistemaRecompensas = () => {
   
   // Calcular saldo total
   useEffect(() => {
+    console.log("Notas atualizadas:", notas); // Debug
+    
     let totalPedro = 0;
     let totalJulio = 0;
     const historicoNovo = [];
@@ -152,6 +157,8 @@ const SistemaRecompensas = () => {
       }
     });
     
+    console.log("Saldos calculados:", { Pedro: totalPedro, Julio: totalJulio }); // Debug
+    
     setSaldos({
       Pedro: totalPedro,
       Julio: totalJulio
@@ -161,111 +168,111 @@ const SistemaRecompensas = () => {
   }, [notas]);
   
   return (
-    <div className="p-6 max-w-5xl mx-auto bg-white rounded shadow">
-      <h1 className="text-3xl font-bold text-center mb-6">Sistema de Recompensas de Estudos</h1>
+    <div className="container">
+      <h1 className="titulo">Sistema de Recompensas de Estudos</h1>
       
       {/* Saldo Total */}
-      <div className="flex justify-around mb-8">
-        <div className="bg-blue-100 p-4 rounded shadow text-center w-2/5">
-          <h2 className="text-xl font-semibold">Saldo de Pedro</h2>
-          <p className="text-3xl font-bold text-green-600">R$ {saldos.Pedro.toFixed(2)}</p>
+      <div className="saldos">
+        <div className="card-saldo-pedro">
+          <h2>Saldo de Pedro</h2>
+          <p className="valor-saldo">R$ {saldos.Pedro.toFixed(2)}</p>
         </div>
-        <div className="bg-yellow-100 p-4 rounded shadow text-center w-2/5">
-          <h2 className="text-xl font-semibold">Saldo de Julio</h2>
-          <p className="text-3xl font-bold text-green-600">R$ {saldos.Julio.toFixed(2)}</p>
+        <div className="card-saldo-julio">
+          <h2>Saldo de Julio</h2>
+          <p className="valor-saldo">R$ {saldos.Julio.toFixed(2)}</p>
         </div>
       </div>
       
       {/* Tabela de notas */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-300">
+      <div className="tabela-container">
+        <table className="tabela-notas">
           <thead>
-            <tr className="bg-gray-100">
-              <th className="py-2 px-4 border">Disciplina</th>
-              <th className="py-2 px-4 border">Prova</th>
-              <th className="py-2 px-4 border">Nota Pedro</th>
-              <th className="py-2 px-4 border">Nota Julio</th>
-              <th className="py-2 px-4 border">Recompensa</th>
+            <tr>
+              <th>Disciplina</th>
+              <th>Prova</th>
+              <th>Nota Pedro</th>
+              <th>Nota Julio</th>
+              <th>Recompensa</th>
             </tr>
           </thead>
           <tbody>
             {disciplinas.map((disciplina) => (
-              <>
-                <tr key={`${disciplina}-P1`}>
-                  <td className="py-2 px-4 border" rowSpan="2">{disciplina}</td>
-                  <td className="py-2 px-4 border">Prova 1</td>
-                  <td className="py-2 px-4 border">
+              <React.Fragment key={disciplina}>
+                <tr>
+                  <td rowSpan="2">{disciplina}</td>
+                  <td>Prova 1</td>
+                  <td>
                     <input
                       type="number"
                       min="0"
                       max="5"
                       step="0.1"
-                      className="w-20 p-1 border rounded"
+                      className="input-nota"
                       value={notas.Pedro[disciplina].prova1}
                       onChange={(e) => atualizarNota('Pedro', disciplina, 'prova1', e.target.value)}
                     />
                   </td>
-                  <td className="py-2 px-4 border">
+                  <td>
                     <input
                       type="number"
                       min="0"
                       max="5"
                       step="0.1"
-                      className="w-20 p-1 border rounded"
+                      className="input-nota"
                       value={notas.Julio[disciplina].prova1}
                       onChange={(e) => atualizarNota('Julio', disciplina, 'prova1', e.target.value)}
                     />
                   </td>
-                  <td className="py-2 px-4 border">
+                  <td>
                     {historicoRecompensas.find(h => h.id === `${disciplina}-P1`)?.recompensa?.descricao || '-'}
                   </td>
                 </tr>
-                <tr key={`${disciplina}-P2`}>
-                  <td className="py-2 px-4 border">Prova 2</td>
-                  <td className="py-2 px-4 border">
+                <tr>
+                  <td>Prova 2</td>
+                  <td>
                     <input
                       type="number"
                       min="0"
                       max="5"
                       step="0.1"
-                      className="w-20 p-1 border rounded"
+                      className="input-nota"
                       value={notas.Pedro[disciplina].prova2}
                       onChange={(e) => atualizarNota('Pedro', disciplina, 'prova2', e.target.value)}
                     />
                   </td>
-                  <td className="py-2 px-4 border">
+                  <td>
                     <input
                       type="number"
                       min="0"
                       max="5"
                       step="0.1"
-                      className="w-20 p-1 border rounded"
+                      className="input-nota"
                       value={notas.Julio[disciplina].prova2}
                       onChange={(e) => atualizarNota('Julio', disciplina, 'prova2', e.target.value)}
                     />
                   </td>
-                  <td className="py-2 px-4 border">
+                  <td>
                     {historicoRecompensas.find(h => h.id === `${disciplina}-P2`)?.recompensa?.descricao || '-'}
                   </td>
                 </tr>
-              </>
+              </React.Fragment>
             ))}
           </tbody>
         </table>
       </div>
       
       {/* Histórico de recompensas */}
-      <div className="mt-8">
-        <h2 className="text-2xl font-semibold mb-4">Histórico de Recompensas</h2>
-        <table className="min-w-full bg-white border border-gray-300">
+      <div className="historico">
+        <h2>Histórico de Recompensas</h2>
+        <table className="tabela-historico">
           <thead>
-            <tr className="bg-gray-100">
-              <th className="py-2 px-4 border">Disciplina</th>
-              <th className="py-2 px-4 border">Prova</th>
-              <th className="py-2 px-4 border">Pedro</th>
-              <th className="py-2 px-4 border">Julio</th>
-              <th className="py-2 px-4 border">Descrição</th>
-              <th className="py-2 px-4 border">Recompensa (cada)</th>
+            <tr>
+              <th>Disciplina</th>
+              <th>Prova</th>
+              <th>Pedro</th>
+              <th>Julio</th>
+              <th>Descrição</th>
+              <th>Recompensa (cada)</th>
             </tr>
           </thead>
           <tbody>
@@ -273,43 +280,43 @@ const SistemaRecompensas = () => {
               .filter(item => item.recompensa.recompensaPedro > 0 || item.recompensa.recompensaJulio > 0)
               .map((item) => (
                 <tr key={item.id}>
-                  <td className="py-2 px-4 border">{item.disciplina}</td>
-                  <td className="py-2 px-4 border">{item.prova}</td>
-                  <td className="py-2 px-4 border">{item.notaPedro}</td>
-                  <td className="py-2 px-4 border">{item.notaJulio}</td>
-                  <td className="py-2 px-4 border">{item.recompensa.descricao}</td>
-                  <td className="py-2 px-4 border text-right">
+                  <td>{item.disciplina}</td>
+                  <td>{item.prova}</td>
+                  <td>{item.notaPedro}</td>
+                  <td>{item.notaJulio}</td>
+                  <td>{item.recompensa.descricao}</td>
+                  <td className="valor-recompensa">
                     R$ {item.recompensa.recompensaPedro.toFixed(2)}
                   </td>
                 </tr>
             ))}
           </tbody>
           <tfoot>
-            <tr className="bg-gray-200 font-bold">
-              <td className="py-2 px-4 border" colSpan="5" align="right">Total Pedro:</td>
-              <td className="py-2 px-4 border text-right">R$ {saldos.Pedro.toFixed(2)}</td>
+            <tr className="total">
+              <td colSpan="5" align="right">Total Pedro:</td>
+              <td className="valor-recompensa">R$ {saldos.Pedro.toFixed(2)}</td>
             </tr>
-            <tr className="bg-gray-200 font-bold">
-              <td className="py-2 px-4 border" colSpan="5" align="right">Total Julio:</td>
-              <td className="py-2 px-4 border text-right">R$ {saldos.Julio.toFixed(2)}</td>
+            <tr className="total">
+              <td colSpan="5" align="right">Total Julio:</td>
+              <td className="valor-recompensa">R$ {saldos.Julio.toFixed(2)}</td>
             </tr>
           </tfoot>
         </table>
       </div>
       
       {/* Regras */}
-      <div className="mt-8 p-4 bg-gray-50 rounded shadow">
-        <h2 className="text-xl font-semibold mb-2">Regras de Recompensas:</h2>
-        <ul className="list-disc pl-6">
-          <li className="mb-1">1 irmão tirou maior ou igual a 4,5: os dois irmãos ganham R$ 10,00 cada.</li>
-          <li className="mb-1">2 irmãos tiraram maior ou igual a 4,5: os dois ganham R$ 20,00 cada.</li>
-          <li className="mb-1">1 irmão tirou 5 e o outro tirou menos de 4,5: os dois ganham R$ 15,00 cada.</li>
-          <li className="mb-1">1 irmão tirou 5 e o outro tirou maior ou igual a 4,5: os dois ganham R$ 25,00 cada.</li>
-          <li className="mb-1">2 irmãos tiraram 5: os dois ganham R$ 40,00 cada.</li>
+      <div className="regras">
+        <h2>Regras de Recompensas:</h2>
+        <ul>
+          <li>1 irmão tirou maior ou igual a 4,5: os dois irmãos ganham R$ 10,00 cada.</li>
+          <li>2 irmãos tiraram maior ou igual a 4,5: os dois ganham R$ 20,00 cada.</li>
+          <li>1 irmão tirou 5 e o outro tirou menos de 4,5: os dois ganham R$ 15,00 cada.</li>
+          <li>1 irmão tirou 5 e o outro tirou maior ou igual a 4,5: os dois ganham R$ 25,00 cada.</li>
+          <li>2 irmãos tiraram 5: os dois ganham R$ 40,00 cada.</li>
         </ul>
       </div>
     </div>
   );
-};
+}
 
-export default SistemaRecompensas;
+export default App;
